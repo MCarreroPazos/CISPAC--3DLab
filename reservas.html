@@ -5,7 +5,8 @@
   <title>Reservas - CISPAC 3D LAB</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.css" rel="stylesheet">
   <style>
     body {
       padding-top: 40px;
@@ -47,8 +48,11 @@
   </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<!-- FullCalendar Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/index.global.min.js"></script>
+
 <script>
   const usuariosAutorizados = {
     "usuario1": "clave123",
@@ -93,7 +97,7 @@
     const hoy = new Date().toISOString().split("T")[0];
 
     equipos.forEach(eq => {
-      const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && ev.end >= hoy);
+      const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy));
       if (!reservadoHoy) {
         const option = document.createElement("option");
         option.value = eq;
@@ -113,6 +117,7 @@
 
     const calendarEl = document.getElementById("calendar");
     calendario = new FullCalendar.Calendar(calendarEl, {
+      plugins: [FullCalendarDayGrid, FullCalendarInteraction],
       initialView: "dayGridMonth",
       locale: "es",
       selectable: true,
@@ -130,7 +135,6 @@
           calendario.addEvent(event);
           llenarDesplegable();
 
-          // Enviar datos a Google Sheets (fecha = inicio)
           fetch(WEBHOOK_URL, {
             method: "POST",
             body: JSON.stringify({
