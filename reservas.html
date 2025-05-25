@@ -148,6 +148,7 @@
 
     const calendarEl = document.getElementById("calendar");
     calendario = new FullCalendar.Calendar(calendarEl, {
+      plugins: [FullCalendar.DayGrid, FullCalendar.Interaction],
       initialView: "dayGridMonth",
       locale: "es",
       selectable: true,
@@ -212,6 +213,19 @@
       return;
     }
 
+    // Eliminar del array local
+    reservasPorEquipo[equipoSeleccionado] = reservas.filter(ev => ev !== ultima);
+
+    // Eliminar visualmente del calendario
+    const evento = calendario.getEvents().find(ev =>
+      ev.title === nombreReserva && ev.startStr === ultima.start
+    );
+    if (evento) evento.remove();
+
+    actualizarTablaReservas();
+    llenarDesplegable();
+
+    // Enviar a Google Sheets
     fetch(WEBHOOK_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -228,9 +242,6 @@
       }
     }).then(() => {
       alert("Devolución registrada correctamente.");
-      // opcionalmente eliminarla del array local
-      reservasPorEquipo[equipoSeleccionado] = reservas.filter(ev => ev !== ultima);
-      cambiarEquipo(); // refrescar
     });
   }
 </script>
