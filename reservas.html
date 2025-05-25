@@ -55,13 +55,17 @@
     "usuario2": "cispac2025"
   };
 
-  const equipos = ["Escáner 3D", "Estación Total", "Dron RTK", "Servidor RTX"];
-  let reservasPorEquipo = {
-    "Escáner 3D": [],
-    "Estación Total": [],
-    "Dron RTK": [],
-    "Servidor RTX": []
-  };
+  const equipos = [
+    "Escáner 3D de largo alcance",
+    "Escáner 3D de corto alcance",
+    "Georradar",
+    "Dron LiDAR",
+    "Impresora 3D",
+    "Workstation de procesamiento"
+  ];
+
+  let reservasPorEquipo = {};
+  equipos.forEach(e => reservasPorEquipo[e] = []);
 
   let calendario = null;
   let equipoSeleccionado = "";
@@ -130,7 +134,6 @@
           calendario.addEvent(event);
           llenarDesplegable();
 
-          // Enviar datos a Google Sheets
           fetch(WEBHOOK_URL, {
             method: "POST",
             body: JSON.stringify({
@@ -170,7 +173,6 @@
       return;
     }
 
-    // Enviar devolución a Google Sheets
     fetch(WEBHOOK_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -184,11 +186,3 @@
       }),
       headers: {
         "Content-Type": "application/json"
-      }
-    }).then(() => {
-      alert("Devolución registrada correctamente.");
-    });
-  }
-</script>
-</body>
-</html>
