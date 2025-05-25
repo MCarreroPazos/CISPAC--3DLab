@@ -93,7 +93,7 @@
     const hoy = new Date().toISOString().split("T")[0];
 
     equipos.forEach(eq => {
-      const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start === hoy);
+      const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && ev.end >= hoy);
       if (!reservadoHoy) {
         const option = document.createElement("option");
         option.value = eq;
@@ -116,39 +116,42 @@
       initialView: "dayGridMonth",
       locale: "es",
       selectable: true,
-      headerToolbar: {
-        left: "prev,next today",
-        center: "title",
-        right: "dayGridMonth,timeGridWeek,timeGridDay"
-      },
-      events: reservasPorEquipo[equipoSeleccionado],
-      dateClick: function(info) {
-        const title = prompt("Introduce el nombre de quien reserva:");
-        if (title) {
+      selectMirror: true,
+      select: function(info) {
+        const nombre = prompt("Introduce el nombre de quien reserva:");
+        if (nombre) {
           const event = {
-            title: title,
-            start: info.dateStr,
+            title: nombre,
+            start: info.startStr,
+            end: info.endStr,
             allDay: true
           };
           reservasPorEquipo[equipoSeleccionado].push(event);
           calendario.addEvent(event);
           llenarDesplegable();
 
+          // Enviar datos a Google Sheets (fecha = inicio)
           fetch(WEBHOOK_URL, {
             method: "POST",
             body: JSON.stringify({
               tipo: "reserva",
               usuario: usuarioLogueado,
               equipo: equipoSeleccionado,
-              fecha: info.dateStr,
-              nombre: title
+              fecha: info.startStr,
+              nombre: nombre
             }),
             headers: {
               "Content-Type": "application/json"
             }
           });
         }
-      }
+      },
+      headerToolbar: {
+        left: "prev,next today",
+        center: "title",
+        right: "dayGridMonth,timeGridWeek,timeGridDay"
+      },
+      events: reservasPorEquipo[equipoSeleccionado]
     });
 
     calendario.render();
