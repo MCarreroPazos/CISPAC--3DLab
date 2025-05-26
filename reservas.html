@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Reservas - CISPAC 3D LAB</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   
   <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet" />
   
-  <!-- FullCalendar CSS actualizado -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
 
   <style>
     body { padding-top: 40px; }
@@ -22,6 +22,12 @@
       max-width: 400px;
       margin: auto;
     }
+    #loadingHistorial {
+      text-align: center;
+      font-weight: bold;
+      margin: 20px auto;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -31,13 +37,12 @@
 
   <div id="loginForm">
     <h3>Iniciar sesión</h3>
-    <input class="form-control" type="text" id="username" placeholder="Usuario"><br>
-    <input class="form-control" type="password" id="password" placeholder="Contraseña"><br>
+    <input class="form-control" type="text" id="username" placeholder="Usuario" /><br />
     <button class="btn btn-primary" onclick="login()">Entrar</button>
   </div>
 
   <div id="mainInterface" style="display:none;">
-    <hr>
+    <hr />
     <div class="text-center">
       <button class="btn btn-primary" onclick="mostrarReserva()">Reservar equipo</button>
       <button class="btn btn-success" onclick="promptDevolver()">Devolver equipo</button>
@@ -63,6 +68,7 @@
       </table>
     </div>
 
+    <div id="loadingHistorial">Cargando historial...</div>
     <div id="historial">
       <h3>Historial de reservas</h3>
       <table class="table table-bordered">
@@ -80,198 +86,198 @@
 <script src="https://cdn.jsdelivr.net/npm/tabletop@1.6.1/tabletop.min.js"></script>
 
 <script>
-const { Calendar } = FullCalendar;
+  const { Calendar } = FullCalendar;
 
-const usuariosAutorizados = {
-  "usuario1": "clave123",
-  "usuario2": "cispac2025"
-};
+  const usuariosAutorizados = ["usuario1", "usuario2", "cispac"]; // solo usuarios, sin contraseña
 
-const equipos = [
-  "Escáner 3D de largo alcance",
-  "Escáner 3D de corto alcance",
-  "Georradar",
-  "Dron LiDAR",
-  "Impresora 3D",
-  "Workstation de procesamiento"
-];
+  const equipos = [
+    "Escáner 3D de largo alcance",
+    "Escáner 3D de corto alcance",
+    "Georradar",
+    "Dron LiDAR",
+    "Impresora 3D",
+    "Workstation de procesamiento"
+  ];
 
-let reservasPorEquipo = {};
-equipos.forEach(e => reservasPorEquipo[e] = []);
+  let reservasPorEquipo = {};
+  equipos.forEach(e => reservasPorEquipo[e] = []);
 
-let calendario = null;
-let equipoSeleccionado = "";
-let usuarioLogueado = "";
+  let calendario = null;
+  let equipoSeleccionado = "";
+  let usuarioLogueado = "";
 
-const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg68zK1UjGKkKArvc08wAqisJYcAtu-q0ztDzzsHFJ2023Z6L6jPZ_Uz9-pd6e0EQJ/exec";
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQg5tj3JP95AGDZhCfVbtqkSwrtV9kj5e6B6vldCDZM_QYEgLMmLHVCmoPo-DFDKS1n3vYT3Go0GAA2/pubhtml";
+  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwxxPX0Uy7Imrz8WvPipoyI-tVCtkUDXb5lvh_oVVCB7sbLZTvDIODokE4YpPMTs477/exec";
+  const SHEET_URL = "https://docs.google.com/spreadsheets/d/1WT5Qvbuuf3nk2dmGKkrZpshB_P6okMFQkRVyCnWGPhY/edit?gid=0#gid=0";
 
-function login() {
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  if (usuariosAutorizados[user] === pass) {
-    usuarioLogueado = user;
-    document.getElementById("loginForm").style.display = "none";
-    document.getElementById("mainInterface").style.display = "block";
-  } else {
-    alert("Usuario o contraseña incorrectos.");
-  }
-}
-
-function mostrarReserva() {
-  document.getElementById("historial").style.display = "none";
-  document.getElementById("selectorEquipo").style.display = "block";
-  document.getElementById("calendar").style.display = "block";
-  document.getElementById("resumen").style.display = "block";
-  llenarDesplegable();
-
-  setTimeout(() => {
-    if (calendario) calendario.render();
-  }, 100);
-}
-
-function llenarDesplegable() {
-  const select = document.getElementById("equipos");
-  select.innerHTML = '<option value="">-- Selecciona --</option>';
-  const hoy = new Date().toISOString().split("T")[0];
-  equipos.forEach(eq => {
-    const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy));
-    if (!reservadoHoy) {
-      const option = document.createElement("option");
-      option.value = eq;
-      option.text = eq;
-      select.appendChild(option);
+  function login() {
+    const user = document.getElementById("username").value.trim();
+    if (usuariosAutorizados.includes(user)) {
+      usuarioLogueado = user;
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("mainInterface").style.display = "block";
+    } else {
+      alert("Usuario no autorizado.");
     }
-  });
-}
+  }
 
-function actualizarTablaReservas() {
-  const tabla = document.getElementById("tablaReservas");
-  tabla.innerHTML = "";
-  if (!equipoSeleccionado) return;
-  reservasPorEquipo[equipoSeleccionado].forEach(ev => {
-    const fila = document.createElement("tr");
-    fila.innerHTML = `<td>${ev.title}</td><td>${ev.start}</td><td>${ev.end || "-"}</td>`;
-    tabla.appendChild(fila);
-  });
-}
+  function mostrarReserva() {
+    document.getElementById("historial").style.display = "none";
+    document.getElementById("loadingHistorial").style.display = "none";
+    document.getElementById("selectorEquipo").style.display = "block";
+    document.getElementById("calendar").style.display = "block";
+    document.getElementById("resumen").style.display = "block";
+    llenarDesplegable();
 
-function cambiarEquipo() {
-  const nuevoEquipo = document.getElementById("equipos").value;
-  if (!nuevoEquipo) return;
-  equipoSeleccionado = nuevoEquipo;
-  if (calendario) calendario.destroy();
+    setTimeout(() => {
+      if (calendario) calendario.render();
+    }, 100);
+  }
 
-  calendario = new Calendar(document.getElementById("calendar"), {
-    initialView: "dayGridMonth",
-    selectable: true,
-    locale: "es",
-    select: function(info) {
-      const nombre = prompt("Introduce el nombre de quien reserva:");
-      if (nombre) {
-        const event = {
-          title: nombre,
-          start: info.startStr,
-          end: info.endStr,
-          allDay: true
-        };
-        reservasPorEquipo[equipoSeleccionado].push(event);
-        calendario.addEvent(event);
-        llenarDesplegable();
-        actualizarTablaReservas();
-
-        fetch(WEBHOOK_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            tipo: "reserva",
-            usuario: usuarioLogueado,
-            equipo: equipoSeleccionado,
-            fecha: info.startStr,
-            nombre: nombre
-          }),
-          headers: { "Content-Type": "application/json" }
-        });
+  function llenarDesplegable() {
+    const select = document.getElementById("equipos");
+    select.innerHTML = '<option value="">-- Selecciona --</option>';
+    const hoy = new Date().toISOString().split("T")[0];
+    equipos.forEach(eq => {
+      const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy));
+      if (!reservadoHoy) {
+        const option = document.createElement("option");
+        option.value = eq;
+        option.text = eq;
+        select.appendChild(option);
       }
-    },
-    headerToolbar: {
-      left: "prev,next today",
-      center: "title",
-      right: "dayGridMonth,timeGridWeek,timeGridDay"
-    },
-    events: reservasPorEquipo[equipoSeleccionado]
-  });
-
-  calendario.render();
-  actualizarTablaReservas();
-}
-
-function promptDevolver() {
-  const equiposConReservas = equipos.filter(eq => reservasPorEquipo[eq].length > 0);
-  if (equiposConReservas.length === 0) {
-    alert("No hay equipos actualmente en préstamo.");
-    return;
-  }
-  const seleccion = prompt("Equipos con préstamo:\n" + equiposConReservas.map((e, i) => `${i + 1}. ${e}`).join("\n") + "\n\nEscribe el número del equipo que quieres devolver:");
-  const index = parseInt(seleccion);
-  if (isNaN(index) || index < 1 || index > equiposConReservas.length) return alert("Selección inválida.");
-  equipoSeleccionado = equiposConReservas[index - 1];
-  devolverEquipo();
-}
-
-function devolverEquipo() {
-  const nombre = prompt("Introduce el nombre de quien devuelve el equipo:");
-  if (!nombre) return;
-  const reservas = reservasPorEquipo[equipoSeleccionado];
-  const ultima = reservas.slice().reverse().find(ev => ev.title === nombre);
-  if (!ultima) return alert("Reserva no encontrada.");
-
-  reservasPorEquipo[equipoSeleccionado] = reservas.filter(ev => ev !== ultima);
-  if (calendario) {
-    const evento = calendario.getEvents().find(ev => ev.title === nombre && ev.startStr === ultima.start);
-    if (evento) evento.remove();
+    });
   }
 
-  actualizarTablaReservas();
-  llenarDesplegable();
+  function actualizarTablaReservas() {
+    const tabla = document.getElementById("tablaReservas");
+    tabla.innerHTML = "";
+    if (!equipoSeleccionado) return;
+    reservasPorEquipo[equipoSeleccionado].forEach(ev => {
+      const fila = document.createElement("tr");
+      fila.innerHTML = `<td>${ev.title}</td><td>${ev.start}</td><td>${ev.end || "-"}</td>`;
+      tabla.appendChild(fila);
+    });
+  }
 
-  fetch(WEBHOOK_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      tipo: "devolucion",
-      usuario: usuarioLogueado,
-      equipo: equipoSeleccionado,
-      fecha: ultima.start,
-      nombre: nombre,
-      devueltoPor: nombre,
-      fechaDevolucion: new Date().toISOString().split("T")[0]
-    }),
-    headers: { "Content-Type": "application/json" }
-  }).then(() => alert("Devolución registrada correctamente."));
-}
+  function cambiarEquipo() {
+    const nuevoEquipo = document.getElementById("equipos").value;
+    if (!nuevoEquipo) return;
+    equipoSeleccionado = nuevoEquipo;
+    if (calendario) calendario.destroy();
 
-function verHistorial() {
-  document.getElementById("historial").style.display = "block";
-  document.getElementById("calendar").style.display = "none";
-  document.getElementById("selectorEquipo").style.display = "none";
-  document.getElementById("resumen").style.display = "none";
+    calendario = new Calendar(document.getElementById("calendar"), {
+      initialView: "dayGridMonth",
+      selectable: true,
+      locale: "es",
+      select: function(info) {
+        const nombre = prompt("Introduce el nombre de quien reserva:");
+        if (nombre) {
+          const event = {
+            title: nombre,
+            start: info.startStr,
+            end: info.endStr,
+            allDay: true
+          };
+          reservasPorEquipo[equipoSeleccionado].push(event);
+          calendario.addEvent(event);
+          llenarDesplegable();
+          actualizarTablaReservas();
 
-  Tabletop.init({
-    key: SHEET_URL,
-    simpleSheet: true,
-    callback: function(data) {
-      const tabla = document.getElementById("tablaHistorial");
-      tabla.innerHTML = "";
-      data.forEach(row => {
-        const fila = document.createElement("tr");
-        fila.innerHTML = `
-          <td>${row.Usuario}</td><td>${row.Equipo}</td><td>${row.Fecha}</td>
-          <td>${row.Nombre_de_reserva}</td><td>${row.Devuelto_por}</td><td>${row.Fecha_devolucion}</td>
-        `;
-        tabla.appendChild(fila);
-      });
+          fetch(WEBHOOK_URL, {
+            method: "POST",
+            body: JSON.stringify({
+              tipo: "reserva",
+              usuario: usuarioLogueado,
+              equipo: equipoSeleccionado,
+              fecha: info.startStr,
+              Nombre_de_reserva: nombre
+            }),
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+      },
+      headerToolbar: {
+        left: "prev,next today",
+        center: "title",
+        right: "dayGridMonth,timeGridWeek,timeGridDay"
+      },
+      events: reservasPorEquipo[equipoSeleccionado]
+    });
+
+    calendario.render();
+    actualizarTablaReservas();
+  }
+
+  function promptDevolver() {
+    const equiposConReservas = equipos.filter(eq => reservasPorEquipo[eq].length > 0);
+    if (equiposConReservas.length === 0) {
+      alert("No hay equipos actualmente en préstamo.");
+      return;
     }
-  });
-}
+    const seleccion = prompt("Equipos con préstamo:\n" + equiposConReservas.map((e, i) => `${i + 1}. ${e}`).join("\n") + "\n\nEscribe el número del equipo que quieres devolver:");
+    const index = parseInt(seleccion);
+    if (isNaN(index) || index < 1 || index > equiposConReservas.length) return alert("Selección inválida.");
+    const equipoDevuelto = equiposConReservas[index - 1];
+
+    const reservas = reservasPorEquipo[equipoDevuelto];
+    if (reservas.length === 0) {
+      alert("No hay reservas para ese equipo.");
+      return;
+    }
+    const reserva = reservas.pop();
+
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        tipo: "devolucion",
+        usuario: usuarioLogueado,
+        equipo: equipoDevuelto,
+        Fecha_devolucion: new Date().toISOString().slice(0,10),
+        Devuelto_por: usuarioLogueado,
+        Nombre_de_reserva: reserva.title
+      }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    alert(`Equipo "${equipoDevuelto}" devuelto correctamente.`);
+    if (equipoDevuelto === equipoSeleccionado) actualizarTablaReservas();
+    llenarDesplegable();
+  }
+
+  function verHistorial() {
+    document.getElementById("calendar").style.display = "none";
+    document.getElementById("resumen").style.display = "none";
+    document.getElementById("selectorEquipo").style.display = "none";
+    document.getElementById("historial").style.display = "none";
+    document.getElementById("loadingHistorial").style.display = "block";
+
+    Tabletop.init({
+      key: SHEET_URL,
+      simpleSheet: true,
+      callback: function(data) {
+        const tabla = document.getElementById("tablaHistorial");
+        tabla.innerHTML = "";
+        data.forEach(row => {
+          const fila = document.createElement("tr");
+          fila.innerHTML = `
+            <td>${row.usuario || ""}</td>
+            <td>${row.equipo || ""}</td>
+            <td>${row.fecha || ""}</td>
+            <td>${row.Nombre_de_reserva || ""}</td>
+            <td>${row.Devuelto_por || ""}</td>
+            <td>${row.Fecha_devolucion || ""}</td>
+          `;
+          tabla.appendChild(fila);
+        });
+        document.getElementById("loadingHistorial").style.display = "none";
+        document.getElementById("historial").style.display = "block";
+      },
+      error: function(err) {
+        alert("Error cargando historial: " + err);
+        document.getElementById("loadingHistorial").style.display = "none";
+      }
+    });
+  }
 </script>
 
 </body>
