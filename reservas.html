@@ -8,10 +8,15 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
   <style>
     body { padding-top: 40px; }
-    #calendar { max-width: 900px; margin: 20px auto; }
-    #loginForm { max-width: 400px; margin: auto; }
-    #resumen, #historial { max-width: 900px; margin: 40px auto; }
-    #historial { display: none; }
+    #calendar, #resumen, #historial, #selectorEquipo {
+      max-width: 900px;
+      margin: 30px auto;
+      display: none;
+    }
+    #loginForm {
+      max-width: 400px;
+      margin: auto;
+    }
   </style>
 </head>
 <body>
@@ -28,27 +33,26 @@
 
   <div id="mainInterface" style="display:none;">
     <hr>
-    <label for="equipos"><b>Selecciona un equipo:</b></label>
-    <select id="equipos" class="form-control" style="max-width:300px; margin: 0 auto;" onchange="cambiarEquipo()">
-      <option value="">-- Selecciona --</option>
-    </select>
-
-    <div id="calendar"></div>
-
-    <div class="text-center" style="margin-top: 10px;">
+    <div class="text-center">
+      <button class="btn btn-primary" onclick="mostrarReserva()">Reservar equipo</button>
       <button class="btn btn-success" onclick="devolverEquipo()">Devolver equipo</button>
       <button class="btn btn-info" onclick="verHistorial()">Ver historial completo</button>
     </div>
+
+    <div id="selectorEquipo">
+      <label for="equipos"><b>Selecciona un equipo:</b></label>
+      <select id="equipos" class="form-control" style="max-width:300px; margin: 0 auto;" onchange="cambiarEquipo()">
+        <option value="">-- Selecciona --</option>
+      </select>
+    </div>
+
+    <div id="calendar"></div>
 
     <div id="resumen">
       <h3>Reservas activas</h3>
       <table class="table table-striped">
         <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Inicio</th>
-            <th>Fin</th>
-          </tr>
+          <tr><th>Nombre</th><th>Inicio</th><th>Fin</th></tr>
         </thead>
         <tbody id="tablaReservas"></tbody>
       </table>
@@ -58,14 +62,7 @@
       <h3>Historial de reservas</h3>
       <table class="table table-bordered">
         <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>Equipo</th>
-            <th>Fecha</th>
-            <th>Nombre de reserva</th>
-            <th>Devuelto por</th>
-            <th>Fecha devolución</th>
-          </tr>
+          <tr><th>Usuario</th><th>Equipo</th><th>Fecha</th><th>Nombre</th><th>Devuelto por</th><th>Fecha devolución</th></tr>
         </thead>
         <tbody id="tablaHistorial"></tbody>
       </table>
@@ -100,7 +97,7 @@
   let usuarioLogueado = "";
 
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg68zK1UjGKkKArvc08wAqisJYcAtu-q0ztDzzsHFJ2023Z6L6jPZ_Uz9-pd6e0EQJ/exec";
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQg5tj3JP95AGDZhCfVbtqkSwrtV9kj5e6B6vldCDZM_QYEgLMmLHVCmoPo-DFDKS1n3vYT3Go0GAA2/pub?output=csv";
+  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQg5tj3JP95AGDZhCfVbtqkSwrtV9kj5e6B6vldCDZM_QYEgLMmLHVCmoPo-DFDKS1n3vYT3Go0GAA2/pubhtml";
 
   function login() {
     const user = document.getElementById("username").value;
@@ -110,10 +107,17 @@
       usuarioLogueado = user;
       document.getElementById("loginForm").style.display = "none";
       document.getElementById("mainInterface").style.display = "block";
-      llenarDesplegable();
     } else {
       alert("Usuario o contraseña incorrectos.");
     }
+  }
+
+  function mostrarReserva() {
+    document.getElementById("historial").style.display = "none";
+    document.getElementById("selectorEquipo").style.display = "block";
+    document.getElementById("calendar").style.display = "block";
+    document.getElementById("resumen").style.display = "block";
+    llenarDesplegable();
   }
 
   function llenarDesplegable() {
@@ -137,14 +141,9 @@
     tabla.innerHTML = "";
     if (!equipoSeleccionado) return;
 
-    const reservas = reservasPorEquipo[equipoSeleccionado];
-    reservas.forEach(ev => {
+    reservasPorEquipo[equipoSeleccionado].forEach(ev => {
       const fila = document.createElement("tr");
-      fila.innerHTML = `
-        <td>${ev.title}</td>
-        <td>${ev.start}</td>
-        <td>${ev.end || "-"}</td>
-      `;
+      fila.innerHTML = `<td>${ev.title}</td><td>${ev.start}</td><td>${ev.end || "-"}</td>`;
       tabla.appendChild(fila);
     });
   }
@@ -154,15 +153,12 @@
     if (!nuevoEquipo) return;
 
     equipoSeleccionado = nuevoEquipo;
-
     if (calendario) calendario.destroy();
 
-    const calendarEl = document.getElementById("calendar");
-    calendario = new FullCalendar.Calendar(calendarEl, {
+    calendario = new FullCalendar.Calendar(document.getElementById("calendar"), {
       initialView: "dayGridMonth",
       selectable: true,
       locale: "es",
-      selectMirror: true,
       select: function(info) {
         const nombre = prompt("Introduce el nombre de quien reserva:");
         if (nombre) {
@@ -204,17 +200,15 @@
 
   function devolverEquipo() {
     if (!equipoSeleccionado) return alert("Primero selecciona un equipo.");
-    const nombreReserva = prompt("Introduce el nombre de quien devuelve el equipo:");
-    if (!nombreReserva) return;
+    const nombre = prompt("Introduce el nombre de quien devuelve el equipo:");
+    if (!nombre) return;
 
-    const fechaDevolucion = new Date().toISOString().split("T")[0];
     const reservas = reservasPorEquipo[equipoSeleccionado];
-    const ultima = reservas.slice().reverse().find(ev => ev.title === nombreReserva);
-
-    if (!ultima) return alert("No se encontró ninguna reserva activa con ese nombre.");
+    const ultima = reservas.slice().reverse().find(ev => ev.title === nombre);
+    if (!ultima) return alert("Reserva no encontrada.");
 
     reservasPorEquipo[equipoSeleccionado] = reservas.filter(ev => ev !== ultima);
-    const evento = calendario.getEvents().find(ev => ev.title === nombreReserva && ev.startStr === ultima.start);
+    const evento = calendario.getEvents().find(ev => ev.title === nombre && ev.startStr === ultima.start);
     if (evento) evento.remove();
 
     actualizarTablaReservas();
@@ -227,9 +221,9 @@
         usuario: usuarioLogueado,
         equipo: equipoSeleccionado,
         fecha: ultima.start,
-        nombre: nombreReserva,
-        devueltoPor: nombreReserva,
-        fechaDevolucion: fechaDevolucion
+        nombre: nombre,
+        devueltoPor: nombre,
+        fechaDevolucion: new Date().toISOString().split("T")[0]
       }),
       headers: { "Content-Type": "application/json" }
     }).then(() => alert("Devolución registrada correctamente."));
@@ -237,8 +231,12 @@
 
   function verHistorial() {
     document.getElementById("historial").style.display = "block";
+    document.getElementById("calendar").style.display = "none";
+    document.getElementById("selectorEquipo").style.display = "none";
+    document.getElementById("resumen").style.display = "none";
+
     Tabletop.init({
-      key: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQg5tj3JP95AGDZhCfVbtqkSwrtV9kj5e6B6vldCDZM_QYEgLMmLHVCmoPo-DFDKS1n3vYT3Go0GAA2/pubhtml",
+      key: SHEET_URL,
       simpleSheet: true,
       callback: function(data) {
         const tabla = document.getElementById("tablaHistorial");
@@ -246,12 +244,8 @@
         data.forEach(row => {
           const fila = document.createElement("tr");
           fila.innerHTML = `
-            <td>${row.Usuario}</td>
-            <td>${row.Equipo}</td>
-            <td>${row.Fecha}</td>
-            <td>${row.Nombre_de_reserva}</td>
-            <td>${row.Devuelto_por}</td>
-            <td>${row.Fecha_devolucion}</td>
+            <td>${row.Usuario}</td><td>${row.Equipo}</td><td>${row.Fecha}</td>
+            <td>${row.Nombre_de_reserva}</td><td>${row.Devuelto_por}</td><td>${row.Fecha_devolucion}</td>
           `;
           tabla.appendChild(fila);
         });
