@@ -20,7 +20,6 @@
   </style>
 </head>
 <body>
-
 <div class="container text-center">
   <h1>CISPAC 3D LAB - Reservas</h1>
 
@@ -200,16 +199,44 @@
   }
 
   function devolverEquipo() {
-    if (!equipoSeleccionado) return alert("Primero selecciona un equipo.");
+    // Buscar equipos con reservas activas hoy
+    const hoy = new Date().toISOString().split("T")[0];
+    // Crear lista de equipos con reservas activas
+    const equiposPrestados = equipos.filter(eq => {
+      return reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy));
+    });
+
+    if (equiposPrestados.length === 0) {
+      return alert("No hay equipos en préstamo actualmente.");
+    }
+
+    // Pedir elegir equipo para devolver
+    let equipoADevolver = prompt("Equipos en préstamo:\n" + equiposPrestados.map((e,i) => (i+1)+". "+e).join("\n") + "\n\nEscribe el número del equipo que quieres devolver:");
+    if (!equipoADevolver) return;
+    equipoADevolver = equipoADevolver.trim();
+    const indice = parseInt(equipoADevolver, 10);
+    if (isNaN(indice) || indice < 1 || indice > equiposPrestados.length) {
+      return alert("Selección inválida.");
+    }
+    equipoSeleccionado = equiposPrestados[indice - 1];
+
+    // Pedir nombre de quien devuelve
     const nombre = prompt("Introduce el nombre de quien devuelve el equipo:");
     if (!nombre) return;
-    const reservas = reservasPorEquipo[equipoSeleccionado];
-    const ultima = reservas.slice().reverse().find(ev => ev.title === nombre);
-    if (!ultima) return alert("Reserva no encontrada.");
 
+    const reservas = reservasPorEquipo[equipoSeleccionado];
+    // Buscar última reserva activa con ese nombre
+    const ultima = reservas.slice().reverse().find(ev => ev.title === nombre && ev.start <= hoy && (!ev.end || ev.end >= hoy));
+    if (!ultima) return alert("Reserva no encontrada para ese equipo y nombre.");
+
+    // Eliminar reserva de reservas activas
     reservasPorEquipo[equipoSeleccionado] = reservas.filter(ev => ev !== ultima);
-    const evento = calendario.getEvents().find(ev => ev.title === nombre && ev.startStr === ultima.start);
-    if (evento) evento.remove();
+
+    // Eliminar evento del calendario
+    if (calendario) {
+      const evento = calendario.getEvents().find(ev => ev.title === nombre && ev.startStr === ultima.start);
+      if (evento) evento.remove();
+    }
 
     actualizarTablaReservas();
     llenarDesplegable();
@@ -223,7 +250,7 @@
         fecha: ultima.start,
         nombre: nombre,
         devueltoPor: nombre,
-        fechaDevolucion: new Date().toISOString().split("T")[0]
+        fechaDevolucion: hoy
       }),
       headers: { "Content-Type": "application/json" }
     }).then(() => alert("Devolución registrada correctamente."));
