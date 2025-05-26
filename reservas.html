@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8" />
   <title>Reservas - CISPAC 3D LAB</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
     body { padding-top: 40px; }
     #calendar, #resumen, #historial, #selectorEquipo {
@@ -20,8 +20,10 @@
   </style>
 </head>
 <body>
+
 <div class="container text-center">
   <h1>CISPAC 3D LAB - Reservas</h1>
+
   <div id="loginForm">
     <h3>Iniciar sesión</h3>
     <input class="form-control" type="text" id="username" placeholder="Usuario"><br>
@@ -68,228 +70,210 @@
   </div>
 </div>
 
-<!-- Scripts con defer para que carguen antes de ejecutar el script -->
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/tabletop@1.6.1/tabletop.min.js" defer></script>
-<script defer>
-document.addEventListener("DOMContentLoaded", function() {
-  const usuariosAutorizados = {
-    "usuario1": "clave123",
-    "usuario2": "cispac2025"
-  };
+<!-- Scripts con defer -->
+<script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/tabletop@1.6.1/tabletop.min.js"></script>
 
-  const equipos = [
-    "Escáner 3D de largo alcance",
-    "Escáner 3D de corto alcance",
-    "Georradar",
-    "Dron LiDAR",
-    "Impresora 3D",
-    "Workstation de procesamiento"
-  ];
+<script>
+  // Esperar que se carguen todos los scripts antes de ejecutar
+  window.addEventListener('load', () => {
+    // Todo el código JS aquí dentro...
 
-  let reservasPorEquipo = {};
-  equipos.forEach(e => reservasPorEquipo[e] = []);
+    const usuariosAutorizados = {
+      "usuario1": "clave123",
+      "usuario2": "cispac2025"
+    };
 
-  let calendario = null;
-  let equipoSeleccionado = "";
-  let usuarioLogueado = "";
+    const equipos = [
+      "Escáner 3D de largo alcance",
+      "Escáner 3D de corto alcance",
+      "Georradar",
+      "Dron LiDAR",
+      "Impresora 3D",
+      "Workstation de procesamiento"
+    ];
 
-  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg68zK1UjGKkKArvc08wAqisJYcAtu-q0ztDzzsHFJ2023Z6L6jPZ_Uz9-pd6e0EQJ/exec";
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQg5tj3JP95AGDZhCfVbtqkSwrtV9kj5e6B6vldCDZM_QYEgLMmLHVCmoPo-DFDKS1n3vYT3Go0GAA2/pubhtml";
+    let reservasPorEquipo = {};
+    equipos.forEach(e => reservasPorEquipo[e] = []);
 
-  window.login = function() {
-    const user = document.getElementById("username").value;
-    const pass = document.getElementById("password").value;
-    if (usuariosAutorizados[user] === pass) {
-      usuarioLogueado = user;
-      document.getElementById("loginForm").style.display = "none";
-      document.getElementById("mainInterface").style.display = "block";
-    } else {
-      alert("Usuario o contraseña incorrectos.");
-    }
-  };
+    let calendario = null;
+    let equipoSeleccionado = "";
+    let usuarioLogueado = "";
 
-  window.mostrarReserva = function() {
-    document.getElementById("historial").style.display = "none";
-    document.getElementById("selectorEquipo").style.display = "block";
-    document.getElementById("calendar").style.display = "block";
-    document.getElementById("resumen").style.display = "block";
-    llenarDesplegable();
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg68zK1UjGKkKArvc08wAqisJYcAtu-q0ztDzzsHFJ2023Z6L6jPZ_Uz9-pd6e0EQJ/exec";
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQg5tj3JP95AGDZhCfVbtqkSwrtV9kj5e6B6vldCDZM_QYEgLMmLHVCmoPo-DFDKS1n3vYT3Go0GAA2/pubhtml";
 
-    // Forzar render si el calendario ya existe
-    setTimeout(() => {
-      if (calendario) calendario.render();
-    }, 100);
-  };
-
-  function llenarDesplegable() {
-    const select = document.getElementById("equipos");
-    select.innerHTML = '<option value="">-- Selecciona --</option>';
-    const hoy = new Date().toISOString().split("T")[0];
-    equipos.forEach(eq => {
-      const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy));
-      if (!reservadoHoy) {
-        const option = document.createElement("option");
-        option.value = eq;
-        option.text = eq;
-        select.appendChild(option);
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (usuariosAutorizados[user] === pass) {
+        usuarioLogueado = user;
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("mainInterface").style.display = "block";
+      } else {
+        alert("Usuario o contraseña incorrectos.");
       }
-    });
-  }
+    }
 
-  window.actualizarTablaReservas = function() {
-    const tabla = document.getElementById("tablaReservas");
-    tabla.innerHTML = "";
-    if (!equipoSeleccionado) return;
-    reservasPorEquipo[equipoSeleccionado].forEach(ev => {
-      const fila = document.createElement("tr");
-      fila.innerHTML = `<td>${ev.title}</td><td>${ev.start}</td><td>${ev.end || "-"}</td>`;
-      tabla.appendChild(fila);
-    });
-  };
+    function mostrarReserva() {
+      document.getElementById("historial").style.display = "none";
+      document.getElementById("selectorEquipo").style.display = "block";
+      document.getElementById("calendar").style.display = "block";
+      document.getElementById("resumen").style.display = "block";
+      llenarDesplegable();
 
-  window.cambiarEquipo = function() {
-    const nuevoEquipo = document.getElementById("equipos").value;
-    if (!nuevoEquipo) return;
-    equipoSeleccionado = nuevoEquipo;
-    if (calendario) calendario.destroy();
+      // Forzar render si el calendario ya existe
+      setTimeout(() => {
+        if (calendario) calendario.render();
+      }, 100);
+    }
 
-    calendario = new FullCalendar.Calendar(document.getElementById("calendar"), {
-      initialView: "dayGridMonth",
-      selectable: true,
-      locale: "es",
-      select: function(info) {
-        const nombre = prompt("Introduce el nombre de quien reserva:");
-        if (nombre) {
-          const event = {
-            title: nombre,
-            start: info.startStr,
-            end: info.endStr,
-            allDay: true
-          };
-          reservasPorEquipo[equipoSeleccionado].push(event);
-          calendario.addEvent(event);
-          llenarDesplegable();
-          actualizarTablaReservas();
-
-          fetch(WEBHOOK_URL, {
-            method: "POST",
-            body: JSON.stringify({
-              tipo: "reserva",
-              usuario: usuarioLogueado,
-              equipo: equipoSeleccionado,
-              fecha: info.startStr,
-              nombre: nombre
-            }),
-            headers: { "Content-Type": "application/json" }
-          });
+    function llenarDesplegable() {
+      const select = document.getElementById("equipos");
+      select.innerHTML = '<option value="">-- Selecciona --</option>';
+      const hoy = new Date().toISOString().split("T")[0];
+      equipos.forEach(eq => {
+        const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy));
+        if (!reservadoHoy) {
+          const option = document.createElement("option");
+          option.value = eq;
+          option.text = eq;
+          select.appendChild(option);
         }
-      },
-      headerToolbar: {
-        left: "prev,next today",
-        center: "title",
-        right: "dayGridMonth,timeGridWeek,timeGridDay"
-      },
-      events: reservasPorEquipo[equipoSeleccionado]
-    });
-
-    calendario.render();
-    actualizarTablaReservas();
-  };
-
-  window.devolverEquipo = function() {
-    // Obtener lista de equipos con reservas activas hoy
-    const hoy = new Date().toISOString().split("T")[0];
-    const equiposPrestados = equipos.filter(eq =>
-      reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy))
-    );
-
-    if (equiposPrestados.length === 0) {
-      alert("No hay equipos en préstamo actualmente.");
-      return;
+      });
     }
 
-    // Prompt para seleccionar equipo a devolver
-    let mensajeEquipos = "Selecciona el equipo a devolver:\n";
-    equiposPrestados.forEach((eq, i) => {
-      mensajeEquipos += `${i + 1}. ${eq}\n`;
-    });
-    let opcion = prompt(mensajeEquipos);
-    if (!opcion) return;
-    opcion = parseInt(opcion);
-    if (isNaN(opcion) || opcion < 1 || opcion > equiposPrestados.length) {
-      alert("Opción no válida.");
-      return;
-    }
-    equipoSeleccionado = equiposPrestados[opcion - 1];
-
-    // Seleccionar la reserva activa para devolver
-    const reservas = reservasPorEquipo[equipoSeleccionado];
-    const hoyDate = new Date(hoy);
-    // Buscar reserva activa hoy (puede haber varias, tomamos la última)
-    const reservaActiva = reservas.slice().reverse().find(ev =>
-      (new Date(ev.start) <= hoyDate) && (!ev.end || new Date(ev.end) >= hoyDate)
-    );
-    if (!reservaActiva) {
-      alert("No se encontró reserva activa para ese equipo.");
-      return;
+    function actualizarTablaReservas() {
+      const tabla = document.getElementById("tablaReservas");
+      tabla.innerHTML = "";
+      if (!equipoSeleccionado) return;
+      reservasPorEquipo[equipoSeleccionado].forEach(ev => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `<td>${ev.title}</td><td>${ev.start}</td><td>${ev.end || "-"}</td>`;
+        tabla.appendChild(fila);
+      });
     }
 
-    const nombre = prompt(`Introduce el nombre de quien devuelve el equipo "${equipoSeleccionado}": (reservado para ${reservaActiva.title})`);
-    if (!nombre) return;
+    function cambiarEquipo() {
+      const nuevoEquipo = document.getElementById("equipos").value;
+      if (!nuevoEquipo) return;
+      equipoSeleccionado = nuevoEquipo;
+      if (calendario) calendario.destroy();
 
-    reservasPorEquipo[equipoSeleccionado] = reservas.filter(ev => ev !== reservaActiva);
-    if (calendario) {
-      const evento = calendario.getEvents().find(ev => ev.title === reservaActiva.title && ev.startStr === reservaActiva.start);
-      if (evento) evento.remove();
+      calendario = new FullCalendar.Calendar(document.getElementById("calendar"), {
+        initialView: "dayGridMonth",
+        selectable: true,
+        locale: "es",
+        select: function(info) {
+          const nombre = prompt("Introduce el nombre de quien reserva:");
+          if (nombre) {
+            const event = {
+              title: nombre,
+              start: info.startStr,
+              end: info.endStr,
+              allDay: true
+            };
+            reservasPorEquipo[equipoSeleccionado].push(event);
+            calendario.addEvent(event);
+            llenarDesplegable();
+            actualizarTablaReservas();
+
+            fetch(WEBHOOK_URL, {
+              method: "POST",
+              body: JSON.stringify({
+                tipo: "reserva",
+                usuario: usuarioLogueado,
+                equipo: equipoSeleccionado,
+                fecha: info.startStr,
+                nombre: nombre
+              }),
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+        },
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay"
+        },
+        events: reservasPorEquipo[equipoSeleccionado]
+      });
+
+      calendario.render();
+      actualizarTablaReservas();
     }
-    actualizarTablaReservas();
-    llenarDesplegable();
 
-    fetch(WEBHOOK_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        tipo: "devolucion",
-        usuario: usuarioLogueado,
-        equipo: equipoSeleccionado,
-        fecha: reservaActiva.start,
-        nombre: reservaActiva.title,
-        devueltoPor: nombre,
-        fechaDevolucion: hoy
-      }),
-      headers: { "Content-Type": "application/json" }
-    }).then(() => alert("Devolución registrada correctamente."));
-  };
-
-  window.verHistorial = function() {
-    document.getElementById("historial").style.display = "block";
-    document.getElementById("calendar").style.display = "none";
-    document.getElementById("selectorEquipo").style.display = "none";
-    document.getElementById("resumen").style.display = "none";
-
-    Tabletop.init({
-      key: SHEET_URL,
-      simpleSheet: true,
-      callback: function(data) {
-        const tabla = document.getElementById("tablaHistorial");
-        tabla.innerHTML = "";
-        data.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${row.Usuario || ""}</td>
-            <td>${row.Equipo || ""}</td>
-            <td>${row.Fecha || ""}</td>
-            <td>${row.Nombre || ""}</td>
-            <td>${row.Devuelto_por || ""}</td>
-            <td>${row.Fecha_devolucion || ""}</td>
-          `;
-          tabla.appendChild(tr);
-        });
+    function devolverEquipo() {
+      // Mostrar solo equipos con reservas activas para devolver
+      const equiposEnPrestamo = equipos.filter(eq => reservasPorEquipo[eq].length > 0);
+      if (equiposEnPrestamo.length === 0) {
+        alert("No hay equipos en préstamo para devolver.");
+        return;
       }
-    });
-  };
 
-});
+      const equipoParaDevolver = prompt("Equipos en préstamo:\n" + equiposEnPrestamo.join("\n") + "\n\nEscribe el nombre exacto del equipo a devolver:");
+      if (!equipoParaDevolver || !equiposEnPrestamo.includes(equipoParaDevolver)) {
+        alert("Equipo inválido o cancelado.");
+        return;
+      }
+
+      const nombre = prompt("Introduce el nombre de quien devuelve el equipo:");
+      if (!nombre) return;
+
+      const reservas = reservasPorEquipo[equipoParaDevolver];
+      const ultima = reservas.slice().reverse().find(ev => ev.title === nombre);
+      if (!ultima) return alert("Reserva no encontrada.");
+
+      reservasPorEquipo[equipoParaDevolver] = reservas.filter(ev => ev !== ultima);
+
+      if (equipoParaDevolver === equipoSeleccionado && calendario) {
+        const evento = calendario.getEvents().find(ev => ev.title === nombre && ev.startStr === ultima.start);
+        if (evento) evento.remove();
+        actualizarTablaReservas();
+      }
+
+      llenarDesplegable();
+
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          tipo: "devolucion",
+          usuario: usuarioLogueado,
+          equipo: equipoParaDevolver,
+          fecha: ultima.start,
+          nombre: nombre,
+          devueltoPor: usuarioLogueado,
+          fechaDevolucion: new Date().toISOString()
+        }),
+        headers: { "Content-Type": "application/json" }
+      });
+
+      alert("Equipo devuelto correctamente.");
+    }
+
+    function verHistorial() {
+      document.getElementById("calendar").style.display = "none";
+      document.getElementById("resumen").style.display = "none";
+      document.getElementById("selectorEquipo").style.display = "none";
+      document.getElementById("historial").style.display = "block";
+
+      fetch(SHEET_URL)
+        .then(response => response.text())
+        .then(html => {
+          // Aquí tendrías que parsear el HTML o mejor usar Tabletop o Google Sheets API para obtener datos reales.
+          // Como ejemplo, dejamos vacío.
+          const tbody = document.getElementById("tablaHistorial");
+          tbody.innerHTML = "<tr><td colspan='6'>Funcionalidad de historial aún en desarrollo</td></tr>";
+        });
+    }
+
+    window.login = login;
+    window.mostrarReserva = mostrarReserva;
+    window.devolverEquipo = devolverEquipo;
+    window.verHistorial = verHistorial;
+    window.cambiarEquipo = cambiarEquipo;
+  });
 </script>
+
 </body>
 </html>
