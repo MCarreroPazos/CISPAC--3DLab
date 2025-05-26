@@ -102,7 +102,6 @@
   function login() {
     const user = document.getElementById("username").value;
     const pass = document.getElementById("password").value;
-
     if (usuariosAutorizados[user] === pass) {
       usuarioLogueado = user;
       document.getElementById("loginForm").style.display = "none";
@@ -118,13 +117,17 @@
     document.getElementById("calendar").style.display = "block";
     document.getElementById("resumen").style.display = "block";
     llenarDesplegable();
+
+    // Forzar render si el calendario ya existe
+    setTimeout(() => {
+      if (calendario) calendario.render();
+    }, 100);
   }
 
   function llenarDesplegable() {
     const select = document.getElementById("equipos");
     select.innerHTML = '<option value="">-- Selecciona --</option>';
     const hoy = new Date().toISOString().split("T")[0];
-
     equipos.forEach(eq => {
       const reservadoHoy = reservasPorEquipo[eq].some(ev => ev.start <= hoy && (!ev.end || ev.end >= hoy));
       if (!reservadoHoy) {
@@ -140,7 +143,6 @@
     const tabla = document.getElementById("tablaReservas");
     tabla.innerHTML = "";
     if (!equipoSeleccionado) return;
-
     reservasPorEquipo[equipoSeleccionado].forEach(ev => {
       const fila = document.createElement("tr");
       fila.innerHTML = `<td>${ev.title}</td><td>${ev.start}</td><td>${ev.end || "-"}</td>`;
@@ -151,7 +153,6 @@
   function cambiarEquipo() {
     const nuevoEquipo = document.getElementById("equipos").value;
     if (!nuevoEquipo) return;
-
     equipoSeleccionado = nuevoEquipo;
     if (calendario) calendario.destroy();
 
@@ -202,7 +203,6 @@
     if (!equipoSeleccionado) return alert("Primero selecciona un equipo.");
     const nombre = prompt("Introduce el nombre de quien devuelve el equipo:");
     if (!nombre) return;
-
     const reservas = reservasPorEquipo[equipoSeleccionado];
     const ultima = reservas.slice().reverse().find(ev => ev.title === nombre);
     if (!ultima) return alert("Reserva no encontrada.");
